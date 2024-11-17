@@ -1,5 +1,5 @@
 ## My Profile
-oh-my-posh init pwsh --config '%USERPROFILE%\%LOCALAPPDATA%\Programs\oh-my-posh\themes\nordtron.omp.json' | Invoke-Expression
+oh-my-posh init pwsh --config 'C:\Users\User\AppData\Local\Programs\oh-my-posh\themes\nordtron.omp.json' | Invoke-Expression
 # Add auto complete (requires PSReadline 2.2.0-beta1+ prerelease)
 Set-PSReadLineOption -PredictionSource History
 Set-PSReadLineOption -PredictionViewStyle ListView
@@ -36,16 +36,15 @@ function shizuku {
 
 function touch($file) { "" | Out-File $file -Encoding ASCII }
 
-function ep { npp $PROFILE }
+function ep { npp $PROFILE } # Requires Notepad++
 
-function source { . $PROFILE }
+function source { & $PROFILE }
 
 function df { get-volume }
 
 function admin {
     if ($args.Count -gt 0) {
-        $argList = "& '$args'"
-        Start-Process wt -Verb runAs -ArgumentList "pwsh.exe -NoExit -Command $argList"
+        Start-Process wt -Verb runAs -ArgumentList "pwsh.exe -NoExit -Command $args"
     } else {
         Start-Process wt -Verb runAs
     }
@@ -158,9 +157,6 @@ function mkcd { param($dir) mkdir $dir -Force; Set-Location $dir }
 function docs { Set-Location -Path $HOME\Documents }
 
 function dtop { Set-Location -Path $HOME\Desktop }
-
-# Quick Access to Editing the Profile
-function ep { vim $PROFILE }
 
 # Simplified Process Management
 function k9 { Stop-Process -Name $args[0] }
