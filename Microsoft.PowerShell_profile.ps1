@@ -1,3 +1,65 @@
+## My Profile
+oh-my-posh init pwsh --config 'C:\Users\User\AppData\Local\Programs\oh-my-posh\themes\nordtron.omp.json' | Invoke-Expression
+# Add auto complete (requires PSReadline 2.2.0-beta1+ prerelease)
+Set-PSReadLineOption -PredictionSource History
+Set-PSReadLineOption -PredictionViewStyle ListView
+Set-PSReadLineOption -EditMode Windows
+Import-Module -Name Terminal-Icons
+Invoke-Expression (&scoop-search --hook)
+
+function shutdown {
+    Start-Process "shutdown.exe" -ArgumentList "-s -t 00"
+}
+
+function restart {
+    Start-Process "shutdown.exe" -ArgumentList "-r -t 00"
+}
+
+function slp {
+	Start-Process "C:\Users\User\Desktop\sleep.lnk"
+	exit
+}
+
+function abort {
+    Start-Process "shutdown.exe" -ArgumentList "-a"
+}
+
+Set-Alias npp "C:\Program Files\Notepad++\notepad++.exe" 
+
+function admin {
+	Start-Process "wt.exe" -Verb "RunAs"
+}
+
+function shizuku {
+    adb shell sh /storage/emulated/0/Android/data/moe.shizuku.privileged.api/start.sh
+}
+
+function lsa {
+	gci -force
+}
+
+function touch($file) { "" | Out-File $file -Encoding ASCII }
+
+function ep { npp $PROFILE }
+
+function source { . $PROFILE }
+
+function df { get-volume }
+
+function admin {
+    if ($args.Count -gt 0) {
+        $argList = "& '$args'"
+        Start-Process wt -Verb runAs -ArgumentList "pwsh.exe -NoExit -Command $argList"
+    } else {
+        Start-Process wt -Verb runAs
+    }
+}
+
+Set-Alias -Name sudo -Value admin
+
+Set-Alias -Name whr -Value where.exe
+
+## ChrisTitus Aliases
 function ff($name) {
     Get-ChildItem -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
         Write-Output "$($_.FullName)"
@@ -109,7 +171,10 @@ function k9 { Stop-Process -Name $args[0] }
 
 # Enhanced Listing
 function la { Get-ChildItem -Path . -Force | Format-Table -AutoSize }
+
 function ll { Get-ChildItem -Path . -Force -Hidden | Format-Table -AutoSize }
+
+function lh { ls -h }
 
 # Git Shortcuts
 function gs { git status }
