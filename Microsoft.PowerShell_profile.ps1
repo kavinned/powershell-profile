@@ -34,10 +34,6 @@ function shizuku {
     adb shell sh /storage/emulated/0/Android/data/moe.shizuku.privileged.api/start.sh
 }
 
-function lsa {
-	gci -force
-}
-
 function touch($file) { "" | Out-File $file -Encoding ASCII }
 
 function ep { npp $PROFILE }
@@ -218,7 +214,25 @@ function Show-Help {
 PowerShell Profile Help
 =======================
 
+shutdown - Shuts down the computer.
+
+restart - Restarts the computer.
+
+slp - Sleeps the computer.
+
+abort - Aborts the shutdown.
+
+npp <file> - Opens the specified file in Notepad++.
+
+admin/sudo <command> - Runs the current command as an administrator.
+
+shizuku - Start the shizuku service while connected to an Android device.
+
+whr <file> - Find the path of the specified file.
+
 ep - Opens the current user's profile for editing using the configured editor.
+
+source - Reloads the current user's PowerShell profile.
 
 touch <file> - Creates a new empty file.
 
@@ -229,8 +243,6 @@ Get-PubIP - Retrieves the public IP address of the machine.
 winutil - Runs the WinUtil script from Chris Titus Tech.
 
 uptime - Displays the system uptime.
-
-source - Reloads the current user's PowerShell profile.
 
 unzip <file> - Extracts a zip file to the current directory.
 
@@ -269,6 +281,8 @@ k9 <name> - Kills a process by name.
 la - Lists all files in the current directory with detailed formatting.
 
 ll - Lists all files, including hidden, in the current directory with detailed formatting.
+
+lh - Lists hidden files in the current directory with detailed formatting.
 
 gs - Shortcut for 'git status'.
 
