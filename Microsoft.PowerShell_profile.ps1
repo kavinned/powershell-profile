@@ -1,125 +1,3 @@
-### PowerShell Profile Refactor
-### Version 1.03 - Refactored
-
-#################################################################################################################################
-############                                                                                                         ############
-############                                          !!!   WARNING:   !!!                                           ############
-############                                                                                                         ############
-############                DO NOT MODIFY THIS FILE. THIS FILE IS HASHED AND UPDATED AUTOMATICALLY.                  ############
-############                    ANY CHANGES MADE TO THIS FILE WILL BE OVERWRITTEN BY COMMITS TO                      ############
-############                       https://github.com/ChrisTitusTech/powershell-profile.git.                         ############
-############                                                                                                         ############
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
-############                                                                                                         ############
-############                      IF YOU WANT TO MAKE CHANGES, USE THE Edit-Profile FUNCTION                         ############
-############                              AND SAVE YOUR CHANGES IN THE FILE CREATED.                                 ############
-############                                                                                                         ############
-#################################################################################################################################
-
-#opt-out of telemetry before doing anything, only if PowerShell is run as admin
-if ([bool]([System.Security.Principal.WindowsIdentity]::GetCurrent()).IsSystem) {
-    [System.Environment]::SetEnvironmentVariable('POWERSHELL_TELEMETRY_OPTOUT', 'true', [System.EnvironmentVariableTarget]::Machine)
-}
-
-# Initial GitHub.com connectivity check with 1 second timeout
-$canConnectToGitHub = Test-Connection github.com -Count 1 -Quiet -TimeoutSeconds 1
-
-# Import Modules and External Profiles
-# Ensure Terminal-Icons module is installed before importing
-if (-not (Get-Module -ListAvailable -Name Terminal-Icons)) {
-    Install-Module -Name Terminal-Icons -Scope CurrentUser -Force -SkipPublisherCheck
-}
-Import-Module -Name Terminal-Icons
-$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-if (Test-Path($ChocolateyProfile)) {
-    Import-Module "$ChocolateyProfile"
-}
-
-# Check for Profile Updates
-function Update-Profile {
-    if (-not $global:canConnectToGitHub) {
-        Write-Host "Skipping profile update check due to GitHub.com not responding within 1 second." -ForegroundColor Yellow
-        return
-    }
-
-    try {
-        $url = "https://raw.githubusercontent.com/ChrisTitusTech/powershell-profile/main/Microsoft.PowerShell_profile.ps1"
-        $oldhash = Get-FileHash $PROFILE
-        Invoke-RestMethod $url -OutFile "$env:temp/Microsoft.PowerShell_profile.ps1"
-        $newhash = Get-FileHash "$env:temp/Microsoft.PowerShell_profile.ps1"
-        if ($newhash.Hash -ne $oldhash.Hash) {
-            Copy-Item -Path "$env:temp/Microsoft.PowerShell_profile.ps1" -Destination $PROFILE -Force
-            Write-Host "Profile has been updated. Please restart your shell to reflect changes" -ForegroundColor Magenta
-        }
-    } catch {
-        Write-Error "Unable to check for `$profile updates"
-    } finally {
-        Remove-Item "$env:temp/Microsoft.PowerShell_profile.ps1" -ErrorAction SilentlyContinue
-    }
-}
-Update-Profile
-
-function Update-PowerShell {
-    if (-not $global:canConnectToGitHub) {
-        Write-Host "Skipping PowerShell update check due to GitHub.com not responding within 1 second." -ForegroundColor Yellow
-        return
-    }
-
-    try {
-        Write-Host "Checking for PowerShell updates..." -ForegroundColor Cyan
-        $updateNeeded = $false
-        $currentVersion = $PSVersionTable.PSVersion.ToString()
-        $gitHubApiUrl = "https://api.github.com/repos/PowerShell/PowerShell/releases/latest"
-        $latestReleaseInfo = Invoke-RestMethod -Uri $gitHubApiUrl
-        $latestVersion = $latestReleaseInfo.tag_name.Trim('v')
-        if ($currentVersion -lt $latestVersion) {
-            $updateNeeded = $true
-        }
-
-        if ($updateNeeded) {
-            Write-Host "Updating PowerShell..." -ForegroundColor Yellow
-            winget upgrade "Microsoft.PowerShell" --accept-source-agreements --accept-package-agreements
-            Write-Host "PowerShell has been updated. Please restart your shell to reflect changes" -ForegroundColor Magenta
-        } else {
-            Write-Host "Your PowerShell is up to date." -ForegroundColor Green
-        }
-    } catch {
-        Write-Error "Failed to update PowerShell. Error: $_"
-    }
-}
-Update-PowerShell
-
-
-# Admin Check and Prompt Customization
-$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-function prompt {
-    if ($isAdmin) { "[" + (Get-Location) + "] # " } else { "[" + (Get-Location) + "] $ " }
-}
-$adminSuffix = if ($isAdmin) { " [ADMIN]" } else { "" }
-$Host.UI.RawUI.WindowTitle = "PowerShell {0}$adminSuffix" -f $PSVersionTable.PSVersion.ToString()
-
-# Utility Functions
-function Test-CommandExists {
-    param($command)
-    $exists = $null -ne (Get-Command $command -ErrorAction SilentlyContinue)
-    return $exists
-}
-
-# Editor Configuration
-$EDITOR = if (Test-CommandExists nvim) { 'nvim' }
-          elseif (Test-CommandExists pvim) { 'pvim' }
-          elseif (Test-CommandExists vim) { 'vim' }
-          elseif (Test-CommandExists vi) { 'vi' }
-          elseif (Test-CommandExists code) { 'code' }
-          elseif (Test-CommandExists notepad++) { 'notepad++' }
-          elseif (Test-CommandExists sublime_text) { 'sublime_text' }
-          else { 'notepad' }
-Set-Alias -Name vim -Value $EDITOR
-
-function Edit-Profile {
-    vim $PROFILE.CurrentUserAllHosts
-}
-function touch($file) { "" | Out-File $file -Encoding ASCII }
 function ff($name) {
     Get-ChildItem -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
         Write-Output "$($_.FullName)"
@@ -134,29 +12,12 @@ function winutil {
 	iwr -useb https://christitus.com/win | iex
 }
 
-# System Utilities
-function admin {
-    if ($args.Count -gt 0) {
-        $argList = "& '$args'"
-        Start-Process wt -Verb runAs -ArgumentList "pwsh.exe -NoExit -Command $argList"
-    } else {
-        Start-Process wt -Verb runAs
-    }
-}
-
-# Set UNIX-like aliases for the admin command, so sudo <command> will run the command with elevated rights.
-Set-Alias -Name su -Value admin
-
 function uptime {
     if ($PSVersionTable.PSVersion.Major -eq 5) {
         Get-WmiObject win32_operatingsystem | Select-Object @{Name='LastBootUpTime'; Expression={$_.ConverttoDateTime($_.lastbootuptime)}} | Format-Table -HideTableHeaders
     } else {
         net statistics workstation | Select-String "since" | ForEach-Object { $_.ToString().Replace('Statistics since ', '') }
     }
-}
-
-function reload-profile {
-    & $profile
 }
 
 function unzip ($file) {
@@ -195,10 +56,6 @@ function grep($regex, $dir) {
         return
     }
     $input | select-string $regex
-}
-
-function df {
-    get-volume
 }
 
 function sed($file, $find, $replace) {
@@ -291,77 +148,12 @@ function cpy { Set-Clipboard $args[0] }
 
 function pst { Get-Clipboard }
 
-# Enhanced PowerShell Experience
-Set-PSReadLineOption -Colors @{
-    Command = 'Yellow'
-    Parameter = 'Green'
-    String = 'DarkCyan'
-}
-
-$PSROptions = @{
-    ContinuationPrompt = '  '
-    Colors             = @{
-    Parameter          = $PSStyle.Foreground.Magenta
-    Selection          = $PSStyle.Background.Black
-    InLinePrediction   = $PSStyle.Foreground.BrightYellow + $PSStyle.Background.BrightBlack
-    }
-}
-Set-PSReadLineOption @PSROptions
-Set-PSReadLineKeyHandler -Chord 'Ctrl+f' -Function ForwardWord
-Set-PSReadLineKeyHandler -Chord 'Enter' -Function ValidateAndAcceptLine
-
-$scriptblock = {
-    param($wordToComplete, $commandAst, $cursorPosition)
-    dotnet complete --position $cursorPosition $commandAst.ToString() |
-        ForEach-Object {
-            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-        }
-}
-Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock $scriptblock
-
-
-# Get theme from profile.ps1 or use a default theme
-function Get-Theme {
-    if (Test-Path -Path $PROFILE.CurrentUserAllHosts -PathType leaf) {
-        $existingTheme = Select-String -Raw -Path $PROFILE.CurrentUserAllHosts -Pattern "oh-my-posh init pwsh --config"
-        if ($null -ne $existingTheme) {
-            Invoke-Expression $existingTheme
-            return
-        }
-    } else {
-        oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/cobalt2.omp.json | Invoke-Expression
-    }
-}
-
-## Final Line to set prompt
-Get-Theme
-if (Get-Command zoxide -ErrorAction SilentlyContinue) {
-    Invoke-Expression (& { (zoxide init --cmd cd powershell | Out-String) })
-} else {
-    Write-Host "zoxide command not found. Attempting to install via winget..."
-    try {
-        winget install -e --id ajeetdsouza.zoxide
-        Write-Host "zoxide installed successfully. Initializing..."
-        Invoke-Expression (& { (zoxide init powershell | Out-String) })
-    } catch {
-        Write-Error "Failed to install zoxide. Error: $_"
-    }
-}
-
-Set-Alias -Name z -Value __zoxide_z -Option AllScope -Scope Global -Force
-Set-Alias -Name zi -Value __zoxide_zi -Option AllScope -Scope Global -Force
-
-# Help Function
 function Show-Help {
     @"
 PowerShell Profile Help
 =======================
 
-Update-Profile - Checks for profile updates from a remote repository and updates if necessary.
-
-Update-PowerShell - Checks for the latest PowerShell release and updates if a new version is available.
-
-Edit-Profile - Opens the current user's profile for editing using the configured editor.
+ep - Opens the current user's profile for editing using the configured editor.
 
 touch <file> - Creates a new empty file.
 
@@ -373,7 +165,7 @@ winutil - Runs the WinUtil script from Chris Titus Tech.
 
 uptime - Displays the system uptime.
 
-reload-profile - Reloads the current user's PowerShell profile.
+source - Reloads the current user's PowerShell profile.
 
 unzip <file> - Extracts a zip file to the current directory.
 
