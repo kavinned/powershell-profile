@@ -34,7 +34,21 @@ function shizuku {
     adb shell sh /storage/emulated/0/Android/data/moe.shizuku.privileged.api/start.sh
 }
 
-function touch($file) { "" | Out-File $file -Encoding ASCII }
+function touch {
+    param(
+        [Parameter(Mandatory=$true, ValueFromRemainingArguments=$true)]
+        [string[]]$Files
+    )
+
+    foreach ($file in $Files) {
+        if (!(Test-Path $file)) {
+            "" | Out-File -FilePath $file -Encoding ASCII
+            Write-Host "Created file: $file"
+        } else {
+            Write-Host "File already exists: $file"
+        }
+    }
+}
 
 function ep { npp $PROFILE } # Requires Notepad++
 
