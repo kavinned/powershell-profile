@@ -26,10 +26,6 @@ function abort {
 
 Set-Alias npp "C:\Program Files\Notepad++\notepad++.exe" 
 
-function admin {
-	Start-Process "wt.exe" -Verb "RunAs"
-}
-
 function shizuku {
     adb shell sh /storage/emulated/0/Android/data/moe.shizuku.privileged.api/start.sh
 }
@@ -50,7 +46,18 @@ function touch {
     }
 }
 
-function ep { npp $PROFILE } # Requires Notepad++
+function open {
+#open the directory in file explorer
+    param(
+        [Parameter(Mandatory=$true, ValueFromRemainingArguments=$true)]
+        [string[]]$Dir
+    )
+    explorer.exe $Dir
+}
+
+function ep { nano $PROFILE } # Requires Nano for windows
+
+function nep { npp $PROFILE} # Requires Notepad++
 
 function source { & $PROFILE }
 
@@ -141,8 +148,12 @@ function export($name, $value) {
     set-item -force -path "env:$name" -value $value;
 }
 
-function pkill($name) {
-    Get-Process $name -ErrorAction SilentlyContinue | Stop-Process
+function pkill($identifier) {
+    if ($identifier -match '^\d+$') {
+        Get-Process -Id $identifier -ErrorAction SilentlyContinue | Stop-Process
+    } else {
+        Get-Process $identifier -ErrorAction SilentlyContinue | Stop-Process
+    }
 }
 
 function pgrep($name) {
@@ -268,7 +279,7 @@ which <name> - Shows the path of the command.
 
 export <name> <value> - Sets an environment variable.
 
-pkill <name> - Kills processes by name.
+pkill <name> - Kills processes by name or ID.
 
 pgrep <name> - Lists processes by name.
 
